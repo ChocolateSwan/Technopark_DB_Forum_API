@@ -691,10 +691,16 @@ def create_post(request, slug_or_id):
         print ("helloooo")
         data = json.loads(request.body.decode('utf-8'))
         print ("data")
+
         id_thread = None
         if slug_or_id.isdigit():
+            cursor.execute("SELECT id from thread WHERE id = {}".format(slug_or_id))
+            id_thread = cursor.fetchone()
+            if id_thread is None:
+                return JsonResponse({"message": "No thread"}, status=404, )
+            else:
+                id_thread = id_thread['id']
             id_thread = slug_or_id
-            print (id_thread)
         else:
             print (slug_or_id)
             cursor.execute("SELECT id from thread WHERE slug = '{}'".format(slug_or_id))
@@ -704,6 +710,10 @@ def create_post(request, slug_or_id):
             else:
                 id_thread = id_thread['id']
         print (id_thread)
+        #
+        if len(data) == 0:
+            return JsonResponse([], safe=False, status=201)
+
         req_insert_posts = "WITH t as (INSERT INTO post (author_id, created, message,parent,thread_id) VALUES "
         for post in list(data):
             req_insert_posts += " ((SELECT id FROM \"User\" WHERE nickname = '{}'), now(), '{}',{},{}),"\
